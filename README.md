@@ -22,7 +22,7 @@ the FFmpeg with NDI-installation is for Luke Plassman (https://github.com/lplass
 ```
 sudo apt-get install git
 
-git clone https://github.com/xxxxxxxxxx ffmpeg_runbook
+git clone https://github.com/markusnygard/8-channel-NDI-encoder.git ffmpeg_runbook
 
 cd ffmpeg_runbook/StartUpScripts
 ```
