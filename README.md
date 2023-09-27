@@ -65,46 +65,9 @@ reboot machine
 
 --------------------------------------------------
 
-### FFmpeg examples:
+### Info:
 ----------------------
 
-Direct RTSP URL:
-```
-* rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov
-```
-Direct HTTP URL to sample file:
-```
-* http://www.wowza.com/_h264/BigBuckBunny_115k.mov
-```
-
-NewTek NDI streams:
-
-find NDI-streams
-```
-* ffmpeg -f libndi_newtek -find_sources 1 -i dummy
-```
-Create a new copy of NDI-stream
-```
-* ffmpeg -f libndi_newtek -i 'NDI-TX3 (NDI_1)' -f libndi_newtek 'FFmpegNDI_1'
-```
-SDI Out from DeckLink:
-
-* 720p50:
-```
-    * ffmpeg -r 50 -f libndi_newtek -i 'NDI-TX3 (NDI_1)' -buffer_size 1500M -an -f decklink 'DeckLink Duo (4)’
-```
-* 1080i:
-```
-    * ffmpeg -f libndi_newtek -i 'NDI-TX3 (NDI_1)' -buffer_size 3000M -an -f decklink -s 1920x1080 -r 25000/1000 'DeckLink Duo (4)'
-```
-Decklink encoder:
-```
-* ffmpeg -f decklink -i 'DeckLink Duo (1)' -f libndi_newtek 'NDI_1'
-```
-
-
-Output UDP strøm:
-```
-* ffmpeg -r 50 -i "udp://232.101.1.7:5500" -f libndi_newtek -pix_fmt uyvy422 -clock_video true KAOL_RTP_01
+This is a project that is a updated version of "8-channel NDI runbook" made and publish by danish TV2 and Olzzon. The FFmpeg-NDI implimation is made by Luke Plassman and can be found on his github (https://github.com/lplassman/FFMPEG-NDI) and the FFMpeg is from the official FFmpeg repo and my repo should comply with all licences.
 ```
 
