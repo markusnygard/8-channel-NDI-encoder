@@ -17,7 +17,7 @@ Install:
 Open desktopvideo (Decklink GUI) and setup card for 8 input.
 
 ### Install FFmpeg:
-the FFmpeg with NDI-installation is for Luke Plassman (https://github.com/lplassman/FFMPEG-NDI)
+the FFmpeg with NDI-installation is from Luke Plassman (https://github.com/lplassman/FFMPEG-NDI)
 
 ```
 sudo apt-get install git
