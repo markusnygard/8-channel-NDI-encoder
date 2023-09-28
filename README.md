@@ -74,6 +74,6 @@ This is a project that is a updated version of "8-channel NDI runbook"
 made and publish by danish TV2 and Olzzon.
 The FFmpeg-NDI implementation is made by Luke Plassman
 and can be found on his github (https://github.com/lplassman/FFMPEG-NDI) 
-and the FFmpeg is from the official FFmpeg repo and my repo should comply with all licences.
+and the FFmpeg is from the official FFmpeg repo and this repo should comply with all licences.
 ```
 
