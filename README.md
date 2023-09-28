@@ -70,6 +70,10 @@ reboot machine
 ### Info:
 ----------------------
 
-This is a project that is a updated version of "8-channel NDI runbook" made and publish by danish TV2 and Olzzon. The FFmpeg-NDI implimation is made by Luke Plassman and can be found on his github (https://github.com/lplassman/FFMPEG-NDI) and the FFMpeg is from the official FFmpeg repo and my repo should comply with all licences.
+This is a project that is a updated version of "8-channel NDI runbook"
+made and publish by danish TV2 and Olzzon.
+The FFmpeg-NDI implementation is made by Luke Plassman
+and can be found on his github (https://github.com/lplassman/FFMPEG-NDI)
+and the FFMpeg is from the official FFmpeg repo and my repo should comply with all licences.
 ```
 
