@@ -41,7 +41,7 @@ chmod +x runbook.sh
 ./runbook.sh
 ```
 
-### Make encodersript runable:
+### Make encoderscript runable:
 ```
 chmod +X /home/ndi/runffmpeg/encode8HDSDI.sh
 ```
