@@ -37,7 +37,7 @@ nano HDSDItoNDI.sh
 Run script:
 ```
 cd ..
-chmod +X runbook.sh
+chmod +x runbook.sh
 ./runbook.sh
 ```
 
