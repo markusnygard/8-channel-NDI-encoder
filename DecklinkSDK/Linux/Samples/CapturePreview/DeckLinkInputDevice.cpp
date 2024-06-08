@@ -52,7 +52,6 @@ DeckLinkInputDevice::DeckLinkInputDevice(QObject* owner, com_ptr<IDeckLink>& dev
 	m_deckLinkInput(IID_IDeckLinkInput, device),
 	m_deckLinkConfig(IID_IDeckLinkConfiguration, device),
 	m_deckLinkHDMIInputEDID(IID_IDeckLinkHDMIInputEDID, device),
-	m_deckLinkProfileManager(IID_IDeckLinkProfileManager, device),  // Non-null when the device has > 1 profiles
 	m_supportsFormatDetection(false),
 	m_currentlyCapturing(false),
 	m_applyDetectedInputMode(false),

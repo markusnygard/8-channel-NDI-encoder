@@ -242,5 +242,5 @@ com_ptr<T> make_com_ptr(Args&&... args)
 	com_ptr<T> temp(new T(args...));
 	// com_ptr takes ownership of reference count, so release reference count added by raw pointer constructor
 	temp->Release();
-	return std::move(temp);
+	return temp;
 }

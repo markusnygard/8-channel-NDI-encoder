@@ -57,6 +57,8 @@ const std::vector<std::tuple<BMDVideoConnection, std::string>> kVideoInputConnec
 	std::make_tuple(bmdVideoConnectionComponent, "Component video connection"),
 	std::make_tuple(bmdVideoConnectionComposite, "Composite video connection"),
 	std::make_tuple(bmdVideoConnectionSVideo, "S-Video connection"),
+	std::make_tuple(bmdVideoConnectionEthernet, "Ethernet connection"),
+	std::make_tuple(bmdVideoConnectionOpticalEthernet, "Optical Ethernet connection"),
 };
 enum { 
 	kVideoInputConnectionsFlag = 0, 
@@ -110,9 +112,25 @@ enum {
 	kVideoOutputSDI444Value 
 };
 
+// Ethernet PTP Encapsulation type
+const std::vector<std::tuple<bool, std::string>> kEthernetPTPEncapsulation
+{
+	std::make_tuple(false,	"Ethernet"),
+	std::make_tuple(true,	"UDP"),
+};
+enum {
+	kEthernetPTPEncapsulationFlag = 0,
+	kEthernetPTPEncapsulationString
+};
+
 std::string GetColorModelString(bool is444)
 {
 	return is444 ? "RGB444" : "YUV422";
+}
+
+const char* GetPTPFollowerOnlyString(bool followerOnly)
+{
+	return followerOnly ? "Follower only" : "Follower or leader";
 }
 
 std::string GetIdleOutputString(BMDIdleVideoOutputOperation idleOutputMode)
@@ -132,6 +150,28 @@ std::string GetPassThroughModeString(BMDDeckLinkCapturePassthroughMode passThrou
 	default:
 		return "Disabled";
 	}
+}
+
+bool SupportsEthernetConnection(IDeckLinkProfileAttributes* deckLinkAttributes)
+{
+	int64_t supportedVideoConnections;
+	
+	if (deckLinkAttributes == NULL)
+		return false;
+
+	if (deckLinkAttributes->GetInt(BMDDeckLinkVideoOutputConnections, &supportedVideoConnections) == S_OK)
+	{
+		if (supportedVideoConnections & (bmdVideoConnectionEthernet | bmdVideoConnectionOpticalEthernet))
+			return true;
+	}
+		
+	if (deckLinkAttributes->GetInt(BMDDeckLinkVideoInputConnections, &supportedVideoConnections) == S_OK)
+	{
+		if (supportedVideoConnections & (bmdVideoConnectionEthernet | bmdVideoConnectionOpticalEthernet))
+			return true;
+	}
+		
+	return false;
 }
 
 std::string	GetDisplayNameAttribute(IDeckLinkProfileAttributes* deckLinkAttributes)
@@ -380,6 +420,75 @@ void DisplayUsage(IDeckLinkConfiguration* deckLinkConfiguration, IDeckLinkProfil
 		else
 			fprintf(stderr, "       Selected device does not have persistent ID\n");
 	}
+	
+	if (SupportsEthernetConnection(deckLinkAttributes))
+	{
+		printf("    -pf <PTP follower-only>\n");
+		
+		if (deckLinkConfiguration)
+		{
+			// Get current PTP follower-only value
+			dlbool_t current;
+			if (deckLinkConfiguration->GetFlag(bmdDeckLinkConfigEthernetPTPFollowerOnly, &current) != S_OK)
+				current = (dlbool_t)false;
+			printf("       %s 0:  %s\n", ! current  ? "*" : " ", GetPTPFollowerOnlyString(0));
+			printf("       %s 1:  %s\n", current ? "*" : " ", GetPTPFollowerOnlyString(1));
+		}
+
+		printf("    -pe <PTP encapsulation>\n");
+		
+		if (deckLinkConfiguration)
+		{
+			// Get current PTP encapsulation value
+			dlbool_t currentPTPEncapsulation;
+			if (deckLinkConfiguration->GetFlag(bmdDeckLinkConfigEthernetPTPUseUDPEncapsulation, &currentPTPEncapsulation) != S_OK)
+				currentPTPEncapsulation = (dlbool_t)false;
+			
+			for (size_t i = 0; i < kEthernetPTPEncapsulation.size(); ++i)
+			{
+				printf("       %c%2zu:  %s\n",
+					   (bool)currentPTPEncapsulation == std::get<kEthernetPTPEncapsulationFlag>(kEthernetPTPEncapsulation[i]) ? '*' : ' ',
+					   i,
+					   std::get<kEthernetPTPEncapsulationString>(kEthernetPTPEncapsulation[i]).c_str());
+			}
+		}
+		
+		printf("    -p1 <PTP Priority 1>\n");
+		
+		if (deckLinkConfiguration)
+		{
+			// Get PTP Priority 1 value
+			int64_t ptpPriority1;
+			if (deckLinkConfiguration->GetInt(bmdDeckLinkConfigEthernetPTPPriority1, &ptpPriority1) == S_OK)
+			{
+				printf("       * %lld\n", ptpPriority1);
+			}
+		}
+
+		printf("    -p2 <PTP Priority 2>\n");
+		
+		if (deckLinkConfiguration)
+		{
+			// Get PTP Priority 2 value
+			int64_t ptpPriority2;
+			if (deckLinkConfiguration->GetInt(bmdDeckLinkConfigEthernetPTPPriority2, &ptpPriority2) == S_OK)
+			{
+				printf("       * %lld\n", ptpPriority2);
+			}
+		}
+		
+		printf("    -pd <PTP Domain>\n");
+		
+		if (deckLinkConfiguration)
+		{
+			// Get PTP Domain value
+			int64_t ptpDomain;
+			if (deckLinkConfiguration->GetInt(bmdDeckLinkConfigEthernetPTPDomain, &ptpDomain) == S_OK)
+			{
+				printf("       * %lld\n", ptpDomain);
+			}
+		}
+	}
 
 	fprintf(stderr,
 		"\n"
@@ -396,15 +505,21 @@ void DisplayUsage(IDeckLinkConfiguration* deckLinkConfiguration, IDeckLinkProfil
 int main(int argc, char* argv[])
 {
 	// Configuration settings
-	bool						displayHelp					= false;
-	int							deckLinkIndex				= -1;
-	int							linkConfigurationIndex		= -1;
-	int							videoInputConnectorIndex	= -1;
-	int							audioInputConnectorIndex	= -1;
-	int							videoOutputModeIndex		= -1;
+	bool						displayHelp						= false;
+	int							deckLinkIndex					= -1;
+	int							linkConfigurationIndex			= -1;
+	int							videoInputConnectorIndex		= -1;
+	int							audioInputConnectorIndex		= -1;
+	int							videoOutputModeIndex			= -1;
 	std::string					newDeviceLabel;
+	int							ethernetPTPFollowerOnly			= -1;
+	int							ethernetPTPEncapsulationIndex	= -1;
+	int							ethernetPTPPriority1			= -1;
+	int							ethernetPTPPriority2			= -1;
+	int							ethernetPTPDomain				= -1;
 
 	int							idx;
+	bool						supportsEthernetPTP				= false;
 
 	IDeckLinkIterator*			deckLinkIterator		= NULL;
 	IDeckLink*					deckLink				= NULL;
@@ -445,6 +560,21 @@ int main(int argc, char* argv[])
 
 		else if (strcmp(argv[i], "-n") == 0)
 			newDeviceLabel = std::string(argv[++i]);
+
+		else if (strcmp(argv[i], "-pf") == 0)
+			ethernetPTPFollowerOnly = atoi(argv[++i]);
+		
+		else if (strcmp(argv[i], "-pe") == 0)
+			ethernetPTPEncapsulationIndex = atoi(argv[++i]);
+
+		else if (strcmp(argv[i], "-p1") == 0)
+			ethernetPTPPriority1 = atoi(argv[++i]);
+
+		else if (strcmp(argv[i], "-p2") == 0)
+			ethernetPTPPriority2 = atoi(argv[++i]);
+
+		else if (strcmp(argv[i], "-pd") == 0)
+			ethernetPTPDomain = atoi(argv[++i]);
 
 		else if ((strcmp(argv[i], "?") == 0) || (strcmp(argv[i], "-h") == 0))
 			displayHelp = true;
@@ -504,6 +634,8 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "Unable to query IDeckLinkProfileAttributes interface\n");
 			goto bail;
 		}
+		
+		supportsEthernetPTP = SupportsEthernetConnection(deckLinkAttributes);
 	}
 	else
 		displayHelp = true;
@@ -620,6 +752,55 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
+	
+	if (supportsEthernetPTP)
+	{
+		if (ethernetPTPFollowerOnly != -1)
+		{
+			if (FAILED(deckLinkConfiguration->SetFlag(bmdDeckLinkConfigEthernetPTPFollowerOnly, (dlbool_t)ethernetPTPFollowerOnly)))
+			{
+				fprintf(stderr, "Unable to set Ethernet PTP follower-only\n");
+				goto bail;
+			}
+		}
+		
+		if (ethernetPTPEncapsulationIndex != -1)
+		{
+			if (deckLinkConfiguration->SetFlag(bmdDeckLinkConfigEthernetPTPUseUDPEncapsulation,
+											   (dlbool_t)std::get<kEthernetPTPEncapsulationFlag>(kEthernetPTPEncapsulation[ethernetPTPEncapsulationIndex])) == E_FAIL)
+			{
+				fprintf(stderr, "Unable to set Ethernet PTP encapsulation\n");
+				goto bail;
+			}
+		}
+		
+		if (ethernetPTPPriority1 != -1)
+		{
+			if (deckLinkConfiguration->SetInt(bmdDeckLinkConfigEthernetPTPPriority1, ethernetPTPPriority1) == E_FAIL)
+			{
+				fprintf(stderr, "Unable to set Ethernet PTP priority 1\n");
+				goto bail;
+			}
+		}
+
+		if (ethernetPTPPriority2 != -1)
+		{
+			if (deckLinkConfiguration->SetInt(bmdDeckLinkConfigEthernetPTPPriority2, ethernetPTPPriority2) == E_FAIL)
+			{
+				fprintf(stderr, "Unable to set Ethernet PTP priority 2\n");
+				goto bail;
+			}
+		}
+		
+		if (ethernetPTPDomain != -1)
+		{
+			if (deckLinkConfiguration->SetInt(bmdDeckLinkConfigEthernetPTPDomain, ethernetPTPDomain) == E_FAIL)
+			{
+				fprintf(stderr, "Unable to set Ethernet PTP domain\n");
+				goto bail;
+			}
+		}
+	}
 
 	// OK to write new configuration - print configuration
 	fprintf(stderr, "Updating device with configuration:\n - Device display name: %s\n", GetDisplayNameAttribute(deckLinkAttributes).c_str());
@@ -634,6 +815,20 @@ int main(int argc, char* argv[])
 		fprintf(stderr, " - Video Output Color mode: %s\n", GetColorModelString(std::get<kVideoOutputSDI444Value>(kVideoOutputMode[videoOutputModeIndex])).c_str());
 		fprintf(stderr, " - Video Output Pass-through mode: %s\n", GetPassThroughModeString(std::get<kVideoOutputCapturePassthroughValue>(kVideoOutputMode[videoOutputModeIndex])).c_str());
 		fprintf(stderr, " - Video Output Idle mode: %s\n", GetIdleOutputString(std::get<kVideoOutputIdleModeValue>(kVideoOutputMode[videoOutputModeIndex])).c_str());
+	}
+	if (supportsEthernetPTP)
+	{
+		if (ethernetPTPFollowerOnly != -1)
+			printf(" - Ethernet PTP Follower-Only: %s\n", GetPTPFollowerOnlyString(ethernetPTPFollowerOnly));
+		if (ethernetPTPEncapsulationIndex != -1)
+			printf(" - Ethernet PTP Encapsulation: %s\n",
+					(std::get<kEthernetPTPEncapsulationString>(kEthernetPTPEncapsulation[ethernetPTPEncapsulationIndex])).c_str());
+		if (ethernetPTPPriority1 != -1)
+			printf(" - Ethernet PTP Priority 1: %d\n", ethernetPTPPriority1);
+		if (ethernetPTPPriority2 != -1)
+			printf(" - Ethernet PTP Priority 2: %d\n", ethernetPTPPriority2);
+		if (ethernetPTPDomain != -1)
+			printf(" - Ethernet PTP Domain: %d\n", ethernetPTPDomain);
 	}
 
 	// Write configuration to preferences

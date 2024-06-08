@@ -42,8 +42,8 @@ sudo apt-get -y install autoconf automake build-essential cmake git libass-dev l
 echo "NDI SDK"
 
 cd $InstallDir/NDI-SDK
-sudo chmod +x Install_NDI_SDK_v5_Linux.sh
-sudo ./Install_NDI_SDK_v5_Linux.sh
+sudo chmod +x Install_NDI_SDK_v6_Linux.sh
+sudo ./Install_NDI_SDK_v6_Linux.sh
 
 # Move files from NDI SDK:
 mkdir ~/ffmpeg_sources

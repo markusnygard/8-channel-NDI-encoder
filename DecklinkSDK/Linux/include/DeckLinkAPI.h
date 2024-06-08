@@ -1,5 +1,5 @@
 /* -LICENSE-START-
- ** Copyright (c) 2023 Blackmagic Design
+ ** Copyright (c) 2024 Blackmagic Design
  **  
  ** Permission is hereby granted, free of charge, to any person or organization 
  ** obtaining a copy of the software and accompanying documentation (the 
@@ -38,6 +38,10 @@
  ** -LICENSE-END-
  */
 
+
+/*
+ * -- AUTOMATICALLY GENERATED - DO NOT EDIT ---
+ */
 
 #ifndef BMD_DECKLINKAPI_H
 #define BMD_DECKLINKAPI_H
@@ -135,7 +139,8 @@ enum _BMDSupportedVideoModeFlags {
     bmdSupportedVideoModeSDISingleLink                           = 1 << 2,
     bmdSupportedVideoModeSDIDualLink                             = 1 << 3,
     bmdSupportedVideoModeSDIQuadLink                             = 1 << 4,
-    bmdSupportedVideoModeInAnyProfile                            = 1 << 5
+    bmdSupportedVideoModeInAnyProfile                            = 1 << 5,
+    bmdSupportedVideoModePsF                                     = 1 << 6
 };
 
 /* Enum BMDPacketType - Type of packet */
@@ -152,6 +157,7 @@ typedef uint32_t BMDFrameFlags;
 enum _BMDFrameFlags {
     bmdFrameFlagDefault                                          = 0,
     bmdFrameFlagFlipVertical                                     = 1 << 0,
+    bmdFrameFlagMonitorOutOnly                                   = 1 << 3,
     bmdFrameContainsHDRMetadata                                  = 1 << 1,
 
     /* Flags that are applicable only to instances of IDeckLinkVideoInputFrame */
@@ -397,6 +403,17 @@ enum _BMDDynamicRange {
     bmdDynamicRangeHDRStaticHLG                                  = 1 << 30	// High Dynamic Range HLG in accordance with ITU-R BT.2100-0
 };
 
+/* Enum BMDMezzanineType -  */
+
+typedef uint32_t BMDMezzanineType;
+enum _BMDMezzanineType {
+    bmdMezzanineTypeNone                                         = 0,	// No mezzanine board
+    bmdMezzanineTypeHDMI14OpticalSDI                             = /* 'mza1' */ 0x6D7A6131,	// Mezzanine board with HDMI 1.4 and Optical SDI
+    bmdMezzanineTypeQuadSDI                                      = /* 'mz4s' */ 0x6D7A3473,	// Mezzanine board with four SDI connectors
+    bmdMezzanineTypeHDMI20OpticalSDI                             = /* 'mza2' */ 0x6D7A6132,	// Mezzanine board with HDMI 2.0 and Optical SDI
+    bmdMezzanineTypeHDMI21RS422                                  = /* 'mzhr' */ 0x6D7A6872	// Mezzanine boards with HDMI 2.1 and RS422
+};
+
 /* Enum BMDDeckLinkHDMIInputEDIDID - DeckLink HDMI Input EDID ID */
 
 typedef uint32_t BMDDeckLinkHDMIInputEDIDID;
@@ -434,6 +451,15 @@ enum _BMDDeckLinkFrameMetadataID {
     bmdDeckLinkFrameMetadataHDRMinDisplayMasteringLuminance      = /* 'hmil' */ 0x686D696C,	// Min display mastering luminance in range 0.0001 cd/m2 - 6.5535 cd/m2
     bmdDeckLinkFrameMetadataHDRMaximumContentLightLevel          = /* 'mcll' */ 0x6D636C6C,	// Maximum Content Light Level in range 1 cd/m2 - 65535 cd/m2
     bmdDeckLinkFrameMetadataHDRMaximumFrameAverageLightLevel     = /* 'fall' */ 0x66616C6C	// Maximum Frame Average Light Level in range 1 cd/m2 - 65535 cd/m2
+};
+
+/* Enum BMDEthernetLinkState - The state of the Ethernet link */
+
+typedef uint32_t BMDEthernetLinkState;
+enum _BMDEthernetLinkState {
+    bmdEthernetLinkStateDisconnected                             = /* 'elds' */ 0x656C6473,
+    bmdEthernetLinkStateConnectedUnbound                         = /* 'elcu' */ 0x656C6375,
+    bmdEthernetLinkStateConnectedBound                           = /* 'elcb' */ 0x656C6362
 };
 
 /* Enum BMDProfileID - Identifies a profile */
@@ -495,10 +521,12 @@ enum _BMDDeckLinkAttributeID {
     BMDDeckLinkSupportsHighFrameRateTimecode                     = /* 'HFRT' */ 0x48465254,
     BMDDeckLinkSupportsSynchronizeToCaptureGroup                 = /* 'stcg' */ 0x73746367,
     BMDDeckLinkSupportsSynchronizeToPlaybackGroup                = /* 'stpg' */ 0x73747067,
+    BMDDeckLinkHasMonitorOut                                     = /* 'fmoo' */ 0x666D6F6F,
 
     /* Integers */
 
     BMDDeckLinkMaximumAudioChannels                              = /* 'mach' */ 0x6D616368,
+    BMDDeckLinkMaximumHDMIAudioChannels                          = /* 'mhch' */ 0x6D686368,
     BMDDeckLinkMaximumAnalogAudioInputChannels                   = /* 'iach' */ 0x69616368,
     BMDDeckLinkMaximumAnalogAudioOutputChannels                  = /* 'aach' */ 0x61616368,
     BMDDeckLinkNumberOfSubDevices                                = /* 'nsbd' */ 0x6E736264,
@@ -521,6 +549,7 @@ enum _BMDDeckLinkAttributeID {
     BMDDeckLinkDuplex                                            = /* 'dupx' */ 0x64757078,
     BMDDeckLinkMinimumPrerollFrames                              = /* 'mprf' */ 0x6D707266,
     BMDDeckLinkSupportedDynamicRange                             = /* 'sudr' */ 0x73756472,
+    BMDDeckLinkMezzanineType                                     = /* 'mezt' */ 0x6D657A74,
 
     /* Floats */
 
@@ -537,7 +566,8 @@ enum _BMDDeckLinkAttributeID {
     BMDDeckLinkVendorName                                        = /* 'vndr' */ 0x766E6472,
     BMDDeckLinkDisplayName                                       = /* 'dspn' */ 0x6473706E,
     BMDDeckLinkModelName                                         = /* 'mdln' */ 0x6D646C6E,
-    BMDDeckLinkDeviceHandle                                      = /* 'devh' */ 0x64657668
+    BMDDeckLinkDeviceHandle                                      = /* 'devh' */ 0x64657668,
+    BMDDeckLinkEthernetMACAddress                                = /* 'eMAC' */ 0x654D4143
 };
 
 /* Enum BMDDeckLinkAPIInformationID - DeckLinkAPI information ID */
@@ -568,6 +598,8 @@ enum _BMDDeckLinkStatusID {
     bmdDeckLinkStatusCurrentVideoInputFlags                      = /* 'cvif' */ 0x63766966,
     bmdDeckLinkStatusCurrentVideoOutputMode                      = /* 'cvom' */ 0x63766F6D,
     bmdDeckLinkStatusCurrentVideoOutputFlags                     = /* 'cvof' */ 0x63766F66,
+    bmdDeckLinkStatusEthernetLink                                = /* 'sels' */ 0x73656C73,
+    bmdDeckLinkStatusEthernetLinkMbps                            = /* 'sesp' */ 0x73657370,
     bmdDeckLinkStatusPCIExpressLinkWidth                         = /* 'pwid' */ 0x70776964,
     bmdDeckLinkStatusPCIExpressLinkSpeed                         = /* 'plnk' */ 0x706C6E6B,
     bmdDeckLinkStatusLastVideoOutputPixelFormat                  = /* 'opix' */ 0x6F706978,
@@ -581,6 +613,19 @@ enum _BMDDeckLinkStatusID {
 
     bmdDeckLinkStatusVideoInputSignalLocked                      = /* 'visl' */ 0x7669736C,
     bmdDeckLinkStatusReferenceSignalLocked                       = /* 'refl' */ 0x7265666C,
+
+    /* Strings */
+
+    bmdDeckLinkStatusEthernetLocalIPAddress                      = /* 'seip' */ 0x73656970,
+    bmdDeckLinkStatusEthernetSubnetMask                          = /* 'sesm' */ 0x7365736D,
+    bmdDeckLinkStatusEthernetGatewayIPAddress                    = /* 'segw' */ 0x73656777,
+    bmdDeckLinkStatusEthernetPrimaryDNS                          = /* 'sepd' */ 0x73657064,
+    bmdDeckLinkStatusEthernetSecondaryDNS                        = /* 'sesd' */ 0x73657364,
+    bmdDeckLinkStatusEthernetPTPGrandmasterIdentity              = /* 'spid' */ 0x73706964,
+    bmdDeckLinkStatusEthernetVideoOutputAddress                  = /* 'soav' */ 0x736F6176,
+    bmdDeckLinkStatusEthernetAudioOutputAddress                  = /* 'soaa' */ 0x736F6161,
+    bmdDeckLinkStatusEthernetAncillaryOutputAddress              = /* 'soaA' */ 0x736F6141,
+    bmdDeckLinkStatusEthernetAudioInputChannelOrder              = /* 'saco' */ 0x7361636F,
 
     /* Bytes */
 

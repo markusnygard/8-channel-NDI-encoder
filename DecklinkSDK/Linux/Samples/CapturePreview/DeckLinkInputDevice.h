@@ -71,7 +71,6 @@ public:
 	com_ptr<IDeckLink>					getDeckLinkInstance() const { return m_deckLink; }
 	com_ptr<IDeckLinkInput>				getDeckLinkInput() const { return m_deckLinkInput; }
 	com_ptr<IDeckLinkConfiguration>		getDeckLinkConfiguration() const { return m_deckLinkConfig; }
-	com_ptr<IDeckLinkProfileManager>	getProfileManager() const { return m_deckLinkProfileManager; }
 
 	// IUnknown interface
 	HRESULT		QueryInterface (REFIID iid, LPVOID *ppv) override;
@@ -91,7 +90,6 @@ private:
 	com_ptr<IDeckLinkInput>				m_deckLinkInput;
 	com_ptr<IDeckLinkConfiguration>		m_deckLinkConfig;
 	com_ptr<IDeckLinkHDMIInputEDID>		m_deckLinkHDMIInputEDID;
-	com_ptr<IDeckLinkProfileManager>	m_deckLinkProfileManager;
 
 	bool								m_supportsFormatDetection;
 	bool								m_currentlyCapturing;

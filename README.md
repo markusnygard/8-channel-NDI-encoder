@@ -4,8 +4,10 @@
 -------------------------
 Install Ubuntu 22.04 Desktop with username: ndi(small letters), networkname should be the machinename you wish in the NDI network, and autoboot enabled
 Disable lockscreensaver.
+Caution: Ubuntu 24.04 has at this point (8 june 2024) a problem installing Decklink-drivers, so don't use it before that issue is solved
+The NDI is updated to NDIv6 (8 june 2024)
 
-### Install Decklink "Desktop Video v.12.5"
+### Install Decklink "Desktop Video v.14.0"
 Download from here:
 ```
 https://www.blackmagicdesign.com/support/family/capture-and-playback

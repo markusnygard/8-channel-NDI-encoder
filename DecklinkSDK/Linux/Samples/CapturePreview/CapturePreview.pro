@@ -34,16 +34,14 @@ SOURCES += \
 	DeckLinkInputDevice.cpp \
 	DeckLinkOpenGLWidget.cpp \
 	CapturePreview.cpp \
-	AncillaryDataTable.cpp \
-    ProfileCallback.cpp
+	AncillaryDataTable.cpp
 
 HEADERS += \
 	CapturePreview.h \
 	DeckLinkDeviceDiscovery.h \
 	DeckLinkInputDevice.h \
 	DeckLinkOpenGLWidget.h \
-	AncillaryDataTable.h \
-    ProfileCallback.h
+	AncillaryDataTable.h
 
 FORMS += \
 	CapturePreview.ui

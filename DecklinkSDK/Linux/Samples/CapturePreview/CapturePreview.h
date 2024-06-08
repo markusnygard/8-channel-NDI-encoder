@@ -48,7 +48,6 @@
 #include "DeckLinkDeviceDiscovery.h"
 #include "DeckLinkOpenGLWidget.h"
 #include "AncillaryDataTable.h"
-#include "ProfileCallback.h"
 
 #include "ui_CapturePreview.h"
 
@@ -74,8 +73,6 @@ public:
 	void addDevice(com_ptr<IDeckLink>& deckLink);
 	void removeDevice(com_ptr<IDeckLink>& deckLink);
 	void videoFormatChanged(BMDDisplayMode newDisplayMode);
-	void haltStreams(void);
-	void updateProfile(com_ptr<IDeckLinkProfile>& newProfile);
 
 private:
 	Ui::CapturePreviewDialog*		ui;
@@ -84,7 +81,6 @@ private:
 	com_ptr<DeckLinkInputDevice>		m_selectedDevice;
 	com_ptr<DeckLinkDeviceDiscovery>	m_deckLinkDiscovery;
 	DeckLinkOpenGLWidget*				m_previewView;
-	com_ptr<ProfileCallback>			m_profileCallback;
 	AncillaryDataTable*					m_ancillaryDataTable;
 	BMDVideoConnection					m_selectedInputConnection;
 

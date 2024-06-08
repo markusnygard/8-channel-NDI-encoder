@@ -39,6 +39,8 @@
 */
 
 #include <QMessageBox>
+#include <QStandardItemModel>
+#include <QStandardItem>
 #include "CapturePreview.h"
 #include "ui_CapturePreview.h"
 
@@ -51,6 +53,8 @@ const QVector<QPair<BMDVideoConnection, QString>> kVideoInputConnections =
 	qMakePair(bmdVideoConnectionComponent,	QString("Component")),
 	qMakePair(bmdVideoConnectionComposite,	QString("Composite")),
 	qMakePair(bmdVideoConnectionSVideo,		QString("S-Video")),
+	qMakePair(bmdVideoConnectionEthernet,	QString("Ethernet")),
+	qMakePair(bmdVideoConnectionOpticalEthernet,		QString("Optical Ethernet")),
 };
 
 
@@ -59,7 +63,6 @@ CapturePreview::CapturePreview(QWidget *parent) :
 	ui(new Ui::CapturePreviewDialog),
 	m_selectedDevice(nullptr),
 	m_deckLinkDiscovery(nullptr),
-	m_profileCallback(nullptr),
 	m_selectedInputConnection(bmdVideoConnectionUnspecified)
 {
 	ui->setupUi(this);
@@ -102,11 +105,6 @@ void CapturePreview::setup()
 			QMessageBox::critical(this, "This application requires the DeckLink drivers installed.", "Please install the Blackmagic DeckLink drivers to use the features of this application.");
 		}
 	}
-
-	// Create DeckLink profile callback objects
-	m_profileCallback = make_com_ptr<ProfileCallback>(this);
-	if (m_profileCallback)
-		m_profileCallback->onProfileChanging(std::bind(&CapturePreview::haltStreams, this));
 }
 
 void CapturePreview::customEvent(QEvent *event)
@@ -136,12 +134,6 @@ void CapturePreview::customEvent(QEvent *event)
 		delete frameArrivedEvent->AncillaryData();
 		delete frameArrivedEvent->Metadata();
 	}
-	else if (event->type() == kProfileActivatedEvent)
-	{
-		ProfileActivatedEvent* profileEvent = dynamic_cast<ProfileActivatedEvent*>(event);
-		com_ptr<IDeckLinkProfile> deckLinkProfile(profileEvent->deckLinkProfile());
-		updateProfile(deckLinkProfile);
-	}
 }
 
 void CapturePreview::closeEvent(QCloseEvent *)
@@ -151,10 +143,6 @@ void CapturePreview::closeEvent(QCloseEvent *)
 		// Stop capturing
 		if (m_selectedDevice->isCapturing())
 			stopCapture();
-
-		// Disable profile callback
-		if (m_selectedDevice->getProfileManager())
-			m_selectedDevice->getProfileManager()->SetCallback(nullptr);
 	}
 
 	// Disable DeckLink device discovery
@@ -268,11 +256,22 @@ void CapturePreview::addDevice(com_ptr<IDeckLink>& deckLink)
 		return;
 	}
 
+	com_ptr<IDeckLinkProfileAttributes>		deckLinkAttributes(IID_IDeckLinkProfileAttributes, deckLink);
+	int64_t									intAttribute;
+
+	if (!deckLinkAttributes || deckLinkAttributes->GetInt(BMDDeckLinkDuplex, &intAttribute) != S_OK)
+		return;
+
 	// Store input device to map to maintain reference
 	m_inputDevices[(intptr_t)deckLink.get()] = inputDevice;
 
 	// Add this DeckLink input device to the device list
 	ui->inputDevicePopup->addItem(inputDevice->getDeviceName(), QVariant::fromValue<intptr_t>((intptr_t)deckLink.get()));
+	
+	// Set the enable state of the popup item based on whether DeckLink device is active
+	QStandardItemModel* model = qobject_cast<QStandardItemModel*>(ui->inputDevicePopup->model());
+	QStandardItem* item = model->item(ui->inputDevicePopup->count() - 1);
+	item->setEnabled((BMDDuplexMode)intAttribute != bmdDuplexInactive);
 
 	if (ui->inputDevicePopup->count() == 1)
 	{
@@ -292,6 +291,7 @@ void CapturePreview::removeDevice(com_ptr<IDeckLink>& deckLink)
 	{
 		if (m_selectedDevice->isCapturing())
 			m_selectedDevice->stopCapture();
+
 		m_selectedDevice = nullptr;
 	}
 
@@ -308,9 +308,7 @@ void CapturePreview::removeDevice(com_ptr<IDeckLink>& deckLink)
 	// Dereference input device by removing from list 
 	auto iter = m_inputDevices.find((intptr_t)deckLink.get());
 	if (iter != m_inputDevices.end())
-	{
 		m_inputDevices.erase(iter);
-	}
 
 	// Check how many devices are left
 	if (ui->inputDevicePopup->count() == 0)
@@ -340,28 +338,10 @@ void CapturePreview::videoFormatChanged(BMDDisplayMode newDisplayMode)
 	}
 }
 
-void CapturePreview::haltStreams(void)
-{
-	// Profile is changing, stop capture if running
-	if (m_selectedDevice && m_selectedDevice->isCapturing())
-		stopCapture();
-}
-
-void CapturePreview::updateProfile(com_ptr<IDeckLinkProfile>& /* newProfile */)
-{
-	// Action as if new device selected to check whether device is active/inactive
-	// This will subsequently update input connections and video modes combo boxes
-	inputDeviceChanged(ui->inputDevicePopup->currentIndex());
-}
-
 void CapturePreview::inputDeviceChanged(int selectedDeviceIndex)
 {
 	if (selectedDeviceIndex == -1)
 		return;
-
-	// Disable profile callback for previous selected device
-	if (m_selectedDevice && (m_selectedDevice->getProfileManager()))
-		m_selectedDevice->getProfileManager()->SetCallback(nullptr);
 
 	QVariant selectedDeviceVariant = ui->inputDevicePopup->itemData(selectedDeviceIndex);
 	intptr_t deckLinkPtr = (intptr_t)selectedDeviceVariant.value<intptr_t>();
@@ -373,37 +353,13 @@ void CapturePreview::inputDeviceChanged(int selectedDeviceIndex)
 
 	m_selectedDevice = iter->second;
 
-	// Register profile callback with newly selected device's profile manager
 	if (m_selectedDevice)
 	{
-		com_ptr<IDeckLinkProfileAttributes> deckLinkAttributes(IID_IDeckLinkProfileAttributes, m_selectedDevice->getDeckLinkInstance());
+		// Update the input connector popup menu
+		refreshInputConnectionMenu();
 
-		if (m_selectedDevice->getProfileManager())
-			m_selectedDevice->getProfileManager()->SetCallback(m_profileCallback.get());
-
-		// Query duplex mode attribute to check whether sub-device is active
-		if (deckLinkAttributes)
-		{
-			int64_t		duplexMode;
-
-			if ((deckLinkAttributes->GetInt(BMDDeckLinkDuplex, &duplexMode) == S_OK) &&
-					(duplexMode != bmdDuplexInactive))
-			{
-				// Update the input connector popup menu
-				refreshInputConnectionMenu();
-
-				ui->autoDetectCheckBox->setEnabled(m_selectedDevice->supportsFormatDetection());
-				ui->autoDetectCheckBox->setChecked(m_selectedDevice->supportsFormatDetection());
-			}
-			else
-			{
-				ui->inputConnectionPopup->clear();
-				ui->videoFormatPopup->clear();
-				ui->autoDetectCheckBox->setCheckState(Qt::Unchecked);
-				ui->autoDetectCheckBox->setEnabled(false);
-				ui->startButton->setEnabled(false);
-			}
-		}
+		ui->autoDetectCheckBox->setEnabled(m_selectedDevice->supportsFormatDetection());
+		ui->autoDetectCheckBox->setChecked(m_selectedDevice->supportsFormatDetection());
 	}
 }
 
